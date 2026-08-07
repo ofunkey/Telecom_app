@@ -18,5 +18,6 @@ dependencies = [
     "pypdf",
     "langchain-community",
     "langchain-text-splitters",
+    "torch",
     "torchvision",
 ]
