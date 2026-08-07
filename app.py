@@ -1,8 +1,26 @@
 import os
+import streamlit as st
+
+# using streamlit's secrets management to store the Groq API key is more secure than hardcoding it in the code or using a .env file.
+# Get key from user input
+groq_key = st.text_input("Enter your Groq API Key", type="password")
+
+# Stop the app if no key is entered
+if not groq_key:
+    st.warning("Please enter your Groq API key to continue.")
+    st.stop()
+
+# Set the key for your code or client
+os.environ["GROQ_API_KEY"] = groq_key
+
+# Now run the rest of your app
+st.success("API key accepted! Loading app...")
+
+####Streamlit app code below
 
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 
-import streamlit as st
+
 from dotenv import load_dotenv
 from rag_chain import build_chain
 
