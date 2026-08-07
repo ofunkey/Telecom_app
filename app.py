@@ -1,4 +1,5 @@
 import os
+
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 
 import streamlit as st
@@ -24,9 +25,11 @@ st.set_page_config(
     layout="centered",
 )
 
+
 @st.cache_resource
 def get_chain():
     return build_chain()
+
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -36,7 +39,7 @@ if "pending_question" not in st.session_state:
 # ── Sidebar ──────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.title("📡 Telecom Support")
-    st.caption("Powered by RAG · Qwen3-32B on Groq")
+    st.caption("Powered by RAG · Qwen3.6-27B on Groq")
     st.divider()
 
     st.markdown("**Sample questions**")
@@ -51,7 +54,9 @@ with st.sidebar:
 
 # ── Main ─────────────────────────────────────────────────────────────────────
 st.title("Customer Care Assistant")
-st.caption("Ask me anything about your mobile service — connectivity, billing, SIM, roaming, and more.")
+st.caption(
+    "Ask me anything about your mobile service — connectivity, billing, SIM, roaming, and more."
+)
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
@@ -64,12 +69,25 @@ if st.session_state.pending_question:
     st.session_state.pending_question = None
 
 if question:
+    # append user turn to session history
     st.session_state.messages.append({"role": "user", "content": question})
     with st.chat_message("user"):
         st.markdown(question)
 
+    # build a simple chat_history transcript to pass to the RAG chain
+    transcript_lines = []
+    for m in st.session_state.messages:
+        prefix = "User:" if m["role"] == "user" else "Assistant:"
+        transcript_lines.append(f"{prefix} {m['content']}")
+    chat_history = "\n".join(transcript_lines)
+
+    # invoke chain with question + chat_history (synchronous call to get final answer)
+    chain = get_chain()
+    with st.spinner("Thinking..."):
+        # chain.invoke expects either a question string or dict; we send dict with chat_history
+        response = chain.invoke({"question": question, "chat_history": chat_history})
+
     with st.chat_message("assistant"):
-        chain = get_chain()
-        response = st.write_stream(chain.stream(question))
+        st.markdown(response)
 
     st.session_state.messages.append({"role": "assistant", "content": response})

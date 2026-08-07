@@ -34,9 +34,13 @@ def main():
     )
     chunks = splitter.split_documents(pages)
 
+    # Tag each chunk with metadata
+    guide_id = os.path.splitext(os.path.basename(PDF_PATH))[0].upper()
+
     # Tag each chunk so we know it came from the guide
     for i, chunk in enumerate(chunks):
         chunk.metadata["source"] = "guide"
+        chunk.metadata["guide_id"] = guide_id
         chunk.metadata["chunk_index"] = i
 
     print(f"  {len(chunks)} chunks produced.")
@@ -45,12 +49,30 @@ def main():
     embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
 
     print(f"Embedding and storing in Chroma collection '{COLLECTION}'...")
-    vectorstore = Chroma.from_documents(
-        documents=chunks,
-        embedding=embeddings,
-        collection_name=COLLECTION,
-        persist_directory=CHROMA_DIR,
+    # vectorstore = Chroma.from_documents(
+    #     documents=chunks,
+    #     embedding=embeddings,
+    #     collection_name=COLLECTION,
+    #     persist_directory=CHROMA_DIR,
+    # )
+
+    vectorstore = Chroma(
+    collection_name=COLLECTION,
+    embedding_function=embeddings,
+    persist_directory=CHROMA_DIR,
     )
+
+    # Delete existing guide vectors
+    vectorstore.delete_collection()
+
+    # Recreate the collection with the new metadata
+    vectorstore = Chroma.from_documents(
+    documents=chunks,
+    embedding=embeddings,
+    collection_name=COLLECTION,
+    persist_directory=CHROMA_DIR,
+    )
+    
     print(f"  Done. {vectorstore._collection.count()} vectors stored.")
 
 
