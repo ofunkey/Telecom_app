@@ -1,30 +1,31 @@
 import os
 import streamlit as st
-
-# using streamlit's secrets management to store the Groq API key is more secure than hardcoding it in the code or using a .env file.
-# Get key from user input
-groq_key = st.text_input("Enter your Groq API Key", type="password")
-
-# Stop the app if no key is entered
-if not groq_key:
-    st.warning("Please enter your Groq API key to continue.")
-    st.stop()
-
-# Set the key for your code or client
-os.environ["GROQ_API_KEY"] = groq_key
-
-# Now run the rest of your app
-st.success("API key accepted! Loading app...")
-
-####Streamlit app code below
-
-os.environ["TRANSFORMERS_VERBOSITY"] = "error"
-
-
 from dotenv import load_dotenv
-from rag_chain import build_chain
 
+# 1. Page config MUST be the first Streamlit command executed
+st.set_page_config(
+    page_title="Telecom Support Chat",
+    page_icon="📡",
+    layout="centered",
+)
+
+# 2. Environment flags & local .env loading
+os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 load_dotenv()
+
+# 3. Check for API key in st.secrets or .env first; prompt user if missing
+if "GROQ_API_KEY" not in os.environ and "GROQ_API_KEY" in st.secrets:
+    os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+
+if not os.environ.get("GROQ_API_KEY"):
+    groq_key = st.text_input("Enter your Groq API Key", type="password")
+    if not groq_key:
+        st.warning("Please enter your Groq API key to continue.")
+        st.stop()
+    os.environ["GROQ_API_KEY"] = groq_key
+
+# 4. Import rag_chain ONLY AFTER the API key environment variable is established
+from rag_chain import build_chain
 
 SAMPLE_QUESTIONS = [
     "Why is my mobile internet so slow?",
@@ -36,12 +37,6 @@ SAMPLE_QUESTIONS = [
     "I was charged for roaming but had a bundle active",
     "How do I unlock my phone for another network?",
 ]
-
-st.set_page_config(
-    page_title="Telecom Support Chat",
-    page_icon="📡",
-    layout="centered",
-)
 
 
 @st.cache_resource
@@ -99,10 +94,9 @@ if question:
         transcript_lines.append(f"{prefix} {m['content']}")
     chat_history = "\n".join(transcript_lines)
 
-    # invoke chain with question + chat_history (synchronous call to get final answer)
+    # invoke chain with question + chat_history
     chain = get_chain()
     with st.spinner("Thinking..."):
-        # chain.invoke expects either a question string or dict; we send dict with chat_history
         response = chain.invoke({"question": question, "chat_history": chat_history})
 
     with st.chat_message("assistant"):
