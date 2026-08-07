@@ -2,7 +2,6 @@ import os
 import streamlit as st
 from dotenv import load_dotenv
 
-# 1. Page config MUST be the first Streamlit command
 st.set_page_config(
     page_title="Telecom Support Chat",
     page_icon="📡",
@@ -12,9 +11,9 @@ st.set_page_config(
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 load_dotenv()
 
-# Check secrets / env first
-if "GROQ_API_KEY" not in os.environ and "GROQ_API_KEY" in st.secrets:
-    os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+# Initialize API key state
+if "api_key" not in st.session_state:
+    st.session_state.api_key = os.environ.get("GROQ_API_KEY", "")
 
 SAMPLE_QUESTIONS = [
     "Why is my mobile internet so slow?",
@@ -33,15 +32,19 @@ with st.sidebar:
     st.caption("Powered by RAG · Qwen3.6-27B on Groq")
     st.divider()
 
-    # Always render the key input in the sidebar if missing
-    if not os.environ.get("GROQ_API_KEY"):
-        user_key = st.text_input("Enter Groq API Key", type="password")
-        if user_key:
-            os.environ["GROQ_API_KEY"] = user_key
-            st.success("Key applied!")
-            st.rerun()
-        else:
-            st.warning("⚠️ Please enter a Groq API key to activate the bot.")
+    # ALWAYS show the input field so users can see/enter their key
+    user_key = st.text_input(
+        "Enter Groq API Key",
+        value=st.session_state.api_key,
+        type="password",
+        placeholder="gsk_...",
+    )
+
+    if user_key:
+        st.session_state.api_key = user_key
+        os.environ["GROQ_API_KEY"] = user_key
+    else:
+        st.warning("⚠️ Please enter a Groq API key to activate the bot.")
 
     st.markdown("**Sample questions**")
     st.caption("Click one to send it instantly.")
@@ -54,13 +57,12 @@ with st.sidebar:
         st.session_state.messages = []
 
 
-# Safe chain loader function
+# Safe chain loader
 def get_chain():
     if not os.environ.get("GROQ_API_KEY"):
         st.error("🔑 Groq API Key is missing! Please enter your key in the sidebar.")
         st.stop()
 
-    # Deferred import prevents initializing Groq before key exists
     from rag_chain import build_chain
 
     return build_chain()
@@ -81,16 +83,16 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# Resolve question from chat input or sidebar button click
 question = st.chat_input("Describe your issue…")
 if st.session_state.pending_question:
     question = st.session_state.pending_question
     st.session_state.pending_question = None
 
 if question:
-    # Ensure key exists BEFORE running any query logic
     if not os.environ.get("GROQ_API_KEY"):
-        st.error("Please enter a Groq API Key in the sidebar before asking questions.")
+        st.error(
+            "Please enter a valid Groq API Key in the sidebar before asking questions."
+        )
         st.stop()
 
     st.session_state.messages.append({"role": "user", "content": question})
