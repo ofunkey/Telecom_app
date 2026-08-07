@@ -1,14 +1,9 @@
-<<<<<<< HEAD
-# Telecom_app
-Telecom_chat_bot
-[streamlit-app-Telecom-RAG-System-Qwen3-32B on Groq.webm](https://github.com/user-attachments/assets/2cfecda0-6c85-4628-b3e6-4a161da64a9a)
-=======
 # RAG Telecom Chatbot
 
 Telecom_chat_bot
-[streamlit-app-Telecom-RAG-System-Qwen3-32B on Groq.webm](https://github.com/user-attachments/assets/2cfecda0-6c85-4628-b3e6-4a161da64a9a)
+[streamlit-app-Telecom-RAG-System-Qwen3-27B on Groq.webm](https://github.com/user-attachments/assets/2cfecda0-6c85-4628-b3e6-4a161da64a9a)
 
-A Retrieval-Augmented Generation (RAG) customer care chatbot for telecom support. It answers questions about mobile connectivity, billing, SIM issues, and roaming by retrieving relevant context from three knowledge sources and generating responses with Qwen3-36B via Groq.
+A Retrieval-Augmented Generation (RAG) customer care chatbot for telecom support. It answers questions about mobile connectivity, billing, SIM issues, and roaming by retrieving relevant context from three knowledge sources and generating responses with Qwen3-27B via Groq.
 
 ## Architecture
 
@@ -22,11 +17,11 @@ Merged Retriever (top-k from each store)
   └── ChromaDB · guides     (PDF guide chunks)
      │
      ▼
-ChatPromptTemplate → Qwen3-36B (Groq) → Answer
+ChatPromptTemplate → Qwen3-27B (Groq) → Answer
 ```
 
 **Embedding model:** `sentence-transformers/all-MiniLM-L6-v2` (runs locally via HuggingFace)  
-**LLM:** `qwen/qwen3-36b` served by [Groq](https://groq.com)
+**LLM:** `qwen/qwen3-27b` served by [Groq](https://groq.com)
 
 ## Project Structure
 
@@ -43,8 +38,6 @@ rag-telecom-chatbot/
 │   ├── faq.csv             # FAQ question/answer pairs
 │   ├── tickets.db          # SQLite database of resolved support tickets
 │   ├── telecom_guide.pdf   # Telecom user guide (chunked at ingest)
-│   ├── seed_tickets.py     # Script to seed the tickets database
-│   └── generate_pdf.py     # Script to generate the telecom guide PDF
 ├── chroma_store/       # Persisted Chroma vector database (created at ingest)
 ├── evaluate_retrieval.py   # Evaluate retrieval quality    
 ├── pyproject.toml
@@ -122,4 +115,3 @@ Interactive prompt — type a question and press Enter. Type `quit` to exit.
 
 The retriever fetches the top 3 results from each collection (9 context documents total) for every query.
 
->>>>>>> origin/master
