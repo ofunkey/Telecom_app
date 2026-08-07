@@ -1,12 +1,22 @@
 import os
-
-os.environ["TRANSFORMERS_VERBOSITY"] = "error"
-
 import streamlit as st
 from dotenv import load_dotenv
-from rag_chain import build_chain
 
+# 1. MUST be the first Streamlit command executed
+st.set_page_config(
+    page_title="Telecom Support Chat",
+    page_icon="📡",
+    layout="centered",
+)
+
+os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 load_dotenv()
+
+# 2. Automatically sync GROQ_API_KEY from Streamlit Secrets to environment variables
+if "GROQ_API_KEY" not in os.environ and "GROQ_API_KEY" in st.secrets:
+    os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+
+from rag_chain import build_chain
 
 SAMPLE_QUESTIONS = [
     "Why is my mobile internet so slow?",
@@ -18,12 +28,6 @@ SAMPLE_QUESTIONS = [
     "I was charged for roaming but had a bundle active",
     "How do I unlock my phone for another network?",
 ]
-
-st.set_page_config(
-    page_title="Telecom Support Chat",
-    page_icon="📡",
-    layout="centered",
-)
 
 
 @st.cache_resource
@@ -81,10 +85,9 @@ if question:
         transcript_lines.append(f"{prefix} {m['content']}")
     chat_history = "\n".join(transcript_lines)
 
-    # invoke chain with question + chat_history (synchronous call to get final answer)
+    # invoke chain with question + chat_history
     chain = get_chain()
     with st.spinner("Thinking..."):
-        # chain.invoke expects either a question string or dict; we send dict with chat_history
         response = chain.invoke({"question": question, "chat_history": chat_history})
 
     with st.chat_message("assistant"):
